@@ -3,7 +3,7 @@
 # Trade-off parameters: m, n', F'(R).
 import random
 import matplotlib.pyplot as plt
-
+from typing import Optional
 import numpy as np
 
 
@@ -99,7 +99,7 @@ class BloomFilter(FilterInterface):
 
 
 class PartialFilter(FilterInterface):
-    def __init__(self, S: np.ndarray, m: int, k: int | type(None), alpha: float):
+    def __init__(self, S: np.ndarray, m: int, k: Optional[int], alpha: float):
         """
         --- Input ---
         S: array of integers.
