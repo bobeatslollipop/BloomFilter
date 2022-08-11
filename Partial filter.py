@@ -99,7 +99,7 @@ class BloomFilter(FilterInterface):
 
 
 class PartialFilter(FilterInterface):
-    def __init__(self, S: np.ndarray, m: int, k: int | None, alpha: float):
+    def __init__(self, S: np.ndarray, m: int, k: int | type(None), alpha: float):
         """
         --- Input ---
         S: array of integers.
