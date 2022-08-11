@@ -5,29 +5,8 @@ import random
 import matplotlib.pyplot as plt
 from typing import Optional
 import numpy as np
-
-
-# Generating hash functions via index.
-# See https://stackoverflow.com/questions/2255604/hash-functions-family-generator-in-python#:~:text=The%20universal%20hash%20family%20is,drawn%20randomly%20from%20set%20H%20.
-
-def universal_hashing():
-    def rand_prime():
-        while True:
-            p = random.randrange(2 ** 32, 2 ** 34, 2)
-            if all(p % n != 0 for n in range(3, int((p ** 0.5) + 1), 2)):
-                return p
-
-    m = 2 ** 32 - 1
-    p = rand_prime()
-    a = random.randint(0, p)
-    if a % 2 == 0:
-        a += 1
-    b = random.randint(0, p)
-
-    def h(x):
-        return ((a * x + b) % p) % m
-
-    return h
+import math
+from helpers import *
 
 
 # Doesn't work very well
@@ -61,11 +40,11 @@ class FilterInterface():
         self: has well-defined self.m and self.n values.
 
         --- Output ---
-        k: optimal k value given by int(np.log(2) * self.m / self.n)
+        k: optimal k value given by np.log(2) * self.m / self.n
         """
         if self.n == 0:
             return 0
-        return int(np.log(2) * self.m / self.n)
+        return round(np.log(2) * self.m / self.n)
 
     def __contains__(self, item: int) -> bool:
         for hash in self.hashes:
@@ -108,7 +87,7 @@ class PartialFilter(FilterInterface):
         alpha: portion of elements to actually store
         """
         super().__init__()
-        self.n = int(len(S) * alpha)
+        self.n = round(len(S) * alpha)
         self.m = m
         if k is None:
             self.k = self.optimal_k()
@@ -131,6 +110,10 @@ class PartialFilter(FilterInterface):
         m: length of array.
         p: porportion of U that is in S.
         """
+        def optimal_FPR():
+            """
+            Calculate the optimal FPR (F') under the current constraints.
+            """
         return
 
 
@@ -159,7 +142,7 @@ class RetouchedFilter(FilterInterface):
 
         # Retouching
         nonzero_bits = [i for i, b in enumerate(self.a) if b != 0]
-        n_reset_bits = int(beta * len(nonzero_bits))
+        n_reset_bits = round(beta * len(nonzero_bits))
         reset_bit_inds = np.random.choice(nonzero_bits, n_reset_bits, replace=False)
         for i in reset_bit_inds:
             self.a[i] = 0
@@ -231,7 +214,7 @@ def test_alpha(alpha_range: np.ndarray,
     return FPR, FNR
 
 
-def test_m(multiplier_range=range(5, 25, 5), n=10000):
+def test_m(multiplier_range=range(7, 22, 3), n=10000):
     U = 2000000
 
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(14, 4))
@@ -258,6 +241,8 @@ def test_m(multiplier_range=range(5, 25, 5), n=10000):
         ax2.plot(alpha_range, FNR, label='m={}n'.format(multiplier))
         ax3.plot(alpha_range, FPR + FNR, label='m={}n'.format(multiplier))
 
+    ax1.legend()
+    ax2.legend()
     ax3.legend()
     fig.tight_layout()
     plt.savefig('test_m')
