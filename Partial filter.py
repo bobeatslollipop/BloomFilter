@@ -1,26 +1,10 @@
 # This is for running experiments on the idea of stroring S' \subseteq S instead of the whole set S.
 # Parameters: p, n, U
 # Trade-off parameters: m, n', F'(R).
-import random
 import matplotlib.pyplot as plt
 from typing import Optional
 import numpy as np
-import math
 from helpers import *
-
-
-# Doesn't work very well
-# _memomask = {}
-# def hash_function(n: int) -> Callable:
-#     mask = _memomask.get(n)
-#     if mask is None:
-#         random.seed(n)
-#         mask = _memomask[n] = random.getrandbits(32)
-#
-#     def myhash(x):
-#         return hash(x) ^ mask
-#
-#     return myhash
 
 
 class FilterInterface():
@@ -47,6 +31,8 @@ class FilterInterface():
         return round(np.log(2) * self.m / self.n)
 
     def __contains__(self, item: int) -> bool:
+        if len(self.hashes) == 0:
+            return False
         for hash in self.hashes:
             if self.a[hash(item) % self.m] == 0:
                 return False
@@ -108,12 +94,22 @@ class PartialFilter(FilterInterface):
         --- Input ---
         n: size of S.
         m: length of array.
-        p: porportion of U that is in S.
+        p: |S| / U.
         """
         def optimal_FPR():
             """
             Calculate the optimal FPR (F') under the current constraints.
             """
+            c = np.log(np.e)
+            n_prime_choices = np.linspace(0, n, 100)
+            LHS = [(2 ** (-m / c / n_prime)) / (n_prime ** 2) for n_prime in n_prime_choices]
+            RHS = (c ** 2) * p / m / n
+            plt.figure()
+            plt.plot(n_prime_choices / n, LHS, label='LHS')
+            plt.plot(n_prime_choices / n, RHS, label='RHS')
+            plt.legend()
+            plt.show()
+        optimal_FPR()
         return
 
 
@@ -203,13 +199,6 @@ def test_alpha(alpha_range: np.ndarray,
 
     FPR = np.mean(FPR, axis=1)
     FNR = np.mean(FNR, axis=1)
-    # plt.plot(alpha_range, FPR, label='FPR')
-    # plt.plot(alpha_range, FNR, label='FNR')
-    # plt.plot(alpha_range, FPR + FNR, label='total error')
-    # plt.xlabel('stored portion (alpha)')
-    # plt.ylabel('error rate')
-    # plt.legend()
-    # plt.show()
 
     return FPR, FNR
 
@@ -245,7 +234,21 @@ def test_m(multiplier_range=range(7, 22, 3), n=10000):
     ax2.legend()
     ax3.legend()
     fig.tight_layout()
-    plt.savefig('test_m')
+    plt.savefig('test_m_many')
 
+alpha_range = np.linspace(0.1, 1, 99)
+FPR, FNR = test_alpha(alpha_range=alpha_range,
+                              m=10000,
+                              n_trials=50,
+                              n_draws=1000,
+                              U=20000,
+                              S_size=1000)
+plt.plot(alpha_range, FPR, label='FPR')
+plt.plot(alpha_range, FNR, label='FNR')
+plt.plot(alpha_range, FPR + FNR, label='total error')
+plt.xlabel('stored portion (alpha)')
+plt.ylabel('error rate')
+plt.legend()
+plt.show()
 
-test_m()
+# PartialFilter.calculate_optimal_beta(1000, 10000, 0.05)

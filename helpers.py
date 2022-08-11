@@ -1,6 +1,21 @@
 import random
 import math
 
+
+# Doesn't work very well
+# _memomask = {}
+# def hash_function(n: int) -> Callable:
+#     mask = _memomask.get(n)
+#     if mask is None:
+#         random.seed(n)
+#         mask = _memomask[n] = random.getrandbits(32)
+#
+#     def myhash(x):
+#         return hash(x) ^ mask
+#
+#     return myhash
+
+
 # Generating hash functions via index.
 # See https://stackoverflow.com/questions/2255604/hash-functions-family-generator-in-python#:~:text=The%20universal%20hash%20family%20is,drawn%20randomly%20from%20set%20H%20.
 def universal_hashing():
