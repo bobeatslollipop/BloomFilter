@@ -1,6 +1,7 @@
 # This for testing the optimality of heuristic. 
-import numpy as np
 import gurobipy as gp
+import numpy as np
+
 
 def generate_deltaG(k: int):
     randarr = np.random.choice(500, size=k)
@@ -34,14 +35,15 @@ def test_optimality(P1, R, k):
     m.setObjective(gp.quicksum([deltaG[i] * log_var[i] for i in range(k)]))
 
     # Error rate constraint
-    m.addConstr(P1 * gp.quicksum([(1-ind_var[i]) * deltaG[i] for i in range(k)]) 
-                    + P2 * gp.quicksum([ind_var[i] * deltaH[i] * fpr_var[i] for i in range(k)])
-                    <= R
-            , name="error rate constraint")
-    
+    m.addConstr(P1 * gp.quicksum([(1 - ind_var[i]) * deltaG[i] for i in range(k)])
+                + P2 * gp.quicksum([ind_var[i] * deltaH[i] * fpr_var[i] for i in range(k)])
+                <= R
+                , name="error rate constraint")
+
     m.Params.NonConvex = 2
     m.optimize()
     print('A')
     print(m.objVal)
+
 
 test_optimality(0.2, 0.05, 10)
