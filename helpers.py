@@ -46,3 +46,12 @@ def round(x: float) -> int:
 
 def calculate_FPR(n, m):
     return 2 ** (-m / c / n)
+
+
+def draw_zipfian(size, S, n, s=1):
+    """
+    Draw samples from Zipf(s).
+    """
+    weight = np.array([1 / (i ** s) for i in range(1, n+1)])
+    weight = weight / sum(weight)
+    return np.random.choice(size=size, a=S, replace=True, p=weight)
