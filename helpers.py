@@ -1,5 +1,5 @@
 import random
-import math
+import numpy as np
 
 
 # Doesn't work very well
@@ -15,6 +15,9 @@ import math
 #
 #     return myhash
 
+
+# constant for regular BF
+c = np.log2(np.e)
 
 # Generating hash functions via index.
 # See https://stackoverflow.com/questions/2255604/hash-functions-family-generator-in-python#:~:text=The%20universal%20hash%20family%20is,drawn%20randomly%20from%20set%20H%20.
@@ -39,3 +42,7 @@ def universal_hashing():
 
 def round(x: float) -> int:
     return int(x+0.5)
+
+
+def calculate_FPR(n, m):
+    return 2 ** (-m / c / n)

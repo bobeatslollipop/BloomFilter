@@ -88,6 +88,57 @@ class PartialFilter(FilterInterface):
                 self.a[hash(item) % m] += 1
 
     @staticmethod
+    def optimal_beta(n, m, p):
+        """
+        Calculate optimal value of beta for given m,n,p, via the formula
+        --- Input ---
+        n: size of S.
+        m: length of array.
+        p: |S| / U.
+        """
+        N = 100  # discretize
+        n_prime_choices = np.linspace(1, n, N)
+        LHS = np.array([(2 ** (-m / c / n_prime)) / (n_prime ** 2) for n_prime in n_prime_choices])
+        RHS = (c ** 2) * p / m / n
+
+        plt.figure()
+        plt.plot(n_prime_choices / n, LHS, label='LHS')
+        plt.axhline(RHS, color='r', label='RHS')
+        plt.legend()
+        # plt.show ()
+
+        return np.argmin(np.abs(LHS - RHS)) / N
+
+    # For graphing
+    @staticmethod
+    def error_rate(n, m, p):
+        """
+        Evaluate the output of optimal_beta for given m,n,p. Plots graph.
+        --- Input ---
+        n: size of S.
+        m: length of array.
+        p: |S| / U.
+        """
+        opt = PartialFilter.optimal_beta(n, m, p)
+        N = 100
+        n_prime_range = np.linspace(1, n, N)
+
+        FPR = np.array([2 ** (-m / c / n_prime) for n_prime in n_prime_range])
+        FNR = np.array([p * (n - n_prime) / n for n_prime in n_prime_range])
+
+        plt.figure()
+        plt.plot(n_prime_range / n, FPR, label='FPR')
+        plt.plot(n_prime_range / n, FNR, label='FNR')
+        plt.plot(n_prime_range / n, FPR + FNR, label='total error')
+        plt.axvline(opt, color='r', label='opt')
+        plt.xlabel('proportion stored (alpha)')
+        plt.ylabel('error rates')
+        plt.legend()
+        plt.title('evaluate_opt, m/n={}, p={}'.format(m/n, p))
+        plt.savefig('m={}n, p={}.png'.format(int(m/n), p))
+        # plt.show()
+
+    @staticmethod
     def calculate_optimal_beta(n, m, p):
         """
         Calculate optimal value of beta for given m,n,p, via the formula
@@ -96,20 +147,8 @@ class PartialFilter(FilterInterface):
         m: length of array.
         p: |S| / U.
         """
-        def optimal_FPR():
-            """
-            Calculate the optimal FPR (F') under the current constraints.
-            """
-            c = np.log(np.e)
-            n_prime_choices = np.linspace(0, n, 100)
-            LHS = [(2 ** (-m / c / n_prime)) / (n_prime ** 2) for n_prime in n_prime_choices]
-            RHS = (c ** 2) * p / m / n
-            plt.figure()
-            plt.plot(n_prime_choices / n, LHS, label='LHS')
-            plt.plot(n_prime_choices / n, RHS, label='RHS')
-            plt.legend()
-            plt.show()
-        optimal_FPR()
+
+
         return
 
 
@@ -218,6 +257,7 @@ def test_m(multiplier_range=range(7, 22, 3), n=10000):
     ax3.set_ylabel('Total error')
 
     for multiplier in multiplier_range:
+        print('testing multiplier {} of {}'.format(multiplier, multiplier_range))
         alpha_range = np.linspace(0.1, 1, 100)
         FPR, FNR = test_alpha(alpha_range=alpha_range,
                               m=multiplier * n,
@@ -236,19 +276,19 @@ def test_m(multiplier_range=range(7, 22, 3), n=10000):
     fig.tight_layout()
     plt.savefig('test_m_many')
 
-alpha_range = np.linspace(0.1, 1, 99)
-FPR, FNR = test_alpha(alpha_range=alpha_range,
-                              m=10000,
-                              n_trials=50,
-                              n_draws=1000,
-                              U=20000,
-                              S_size=1000)
-plt.plot(alpha_range, FPR, label='FPR')
-plt.plot(alpha_range, FNR, label='FNR')
-plt.plot(alpha_range, FPR + FNR, label='total error')
-plt.xlabel('stored portion (alpha)')
-plt.ylabel('error rate')
-plt.legend()
-plt.show()
+# alpha_range = np.linspace(0.1, 1, 99)
+# FPR, FNR = test_alpha(alpha_range=alpha_range,
+#                               m=10000,
+#                               n_trials=50,
+#                               n_draws=1000,
+#                               U=20000,
+#                               S_size=1000)
+# plt.plot(alpha_range, FPR, label='FPR')
+# plt.plot(alpha_range, FNR, label='FNR')
+# plt.plot(alpha_range, FPR + FNR, label='total error')
+# plt.xlabel('stored portion (alpha)')
+# plt.ylabel('error rate')
+# plt.legend()
+# plt.show()
 
-# PartialFilter.calculate_optimal_beta(1000, 10000, 0.05)
+PartialFilter.error_rate(10000, 100000, 0.5)
