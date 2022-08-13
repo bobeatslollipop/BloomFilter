@@ -41,51 +41,81 @@ class FilterInterface():
 
 # Create a regular BF.
 class BloomFilter(FilterInterface):
-    def __init__(self, S: np.ndarray, m: int, k: int):
+    def fit(self, S: np.ndarray, m: int, k: int):
         """
         --- Input ---
         S: array of integers.
         m: size of the array
         k: number of hash functions. Default is to calculate optimal k.
         """
-        super().__init__()
         self.n = len(S)
         self.m = m
         if k is None:
             self.k = self.optimal_k()
         else:
             self.k = k
-
-        self.a = np.zeros(m)
         self.hashes = [universal_hashing() for i in range(self.k)]
+        self.a = np.zeros(m)
         for item in S:
             for hash in self.hashes:
                 self.a[hash(item) % m] += 1
 
 
 class PartialFilter(FilterInterface):
-    def __init__(self, S: np.ndarray, m: int, k: Optional[int], alpha: float):
+    def fit(self, S: np.ndarray, m: int, k: Optional[int], alpha: float, method: int=0):
         """
         --- Input ---
         S: array of integers.
         m: size of the array
         k: number of hash functions. Default is to calculate optimal k.
         alpha: portion of elements to actually store
+        method: way of removing elements. 1 means heuristic 1; 2 means heuristic 2; 0 means random.
         """
-        super().__init__()
-        self.n = round(len(S) * alpha)
+        self.n = round(len(S) * alpha) # TODO: check if this causes problems
         self.m = m
         if k is None:
             self.k = self.optimal_k()
         else:
             self.k = k
-
-        S_new = np.random.choice(S, self.n, replace=False)
-        self.a = np.zeros(m)
         self.hashes = [universal_hashing() for i in range(self.k)]
+        self.a = np.zeros(m)
+
+        if method == 0:
+            S_new = np.random.choice(S, self.n, replace=False)
+            for item in S_new:
+                for hash in self.hashes:
+                    self.a[hash(item) % m] += 1
+        elif method == 1:
+            self.heuristic_1(S)
+        elif method == 2:
+            self.heuristic_2(S)
+
+
+    def heuristic_1(self, S):
+        """
+        Remove elements according to heuristic 1, namely to remove those with most load 1 bits.
+        """
+        for item in S:
+            for hash in self.hashes:
+                self.a[hash(item) % self.m] += 1
+
+        count_load_one = []
+        for i, item in enumerate(S):
+            load = len([1 for hash in self.hashes if self.a[hash(item) % self.m] == 1])
+            count_load_one.append((i, load))
+        count_load_one = np.array(sorted(count_load_one, key=lambda x: x[1], reverse=True))
+        S_new = S[count_load_one[self.n:, 0]]
+
+        self.a = np.zeros(self.m)
         for item in S_new:
             for hash in self.hashes:
-                self.a[hash(item) % m] += 1
+                self.a[hash(item) % self.m] += 1
+
+
+    def heuristic_2(self, S):
+        # TODO: implement this
+        pass
+
 
     @staticmethod
     def optimal_alpha(n, m, p, N=100):
@@ -105,17 +135,17 @@ class PartialFilter(FilterInterface):
         LHS = np.array([(2 ** (-m / c / n_prime)) / (n_prime ** 2) for n_prime in n_prime_choices])
         RHS = (c ** 2) * p / m / n
 
-        plt.figure()
-        plt.plot(n_prime_choices / n, LHS, label='LHS')
-        plt.axhline(RHS, color='r', label='RHS')
-        plt.legend()
+        # plt.figure()
+        # plt.plot(n_prime_choices / n, LHS, label='LHS')
+        # plt.axhline(RHS, color='r', label='RHS')
+        # plt.legend()
         # plt.show ()
 
         return np.argmin(np.abs(LHS - RHS)) / N
 
     # For graphing
     @staticmethod
-    def error_rate(n, m, p, N=100):
+    def plot_error_rate(n, m, p, N=100):
         """
         Evaluate the output of optimal_beta for given m,n,p. Plots graph.
         --- Input ---
@@ -139,12 +169,28 @@ class PartialFilter(FilterInterface):
         plt.ylabel('error rates')
         plt.legend()
         plt.title('evaluate_opt, m/n={}, p={}'.format(m/n, p))
-        plt.savefig('m={}n, p={}.png'.format(int(m/n), p))
-        # plt.show()
+        # plt.savefig('m={}n, p={}.png'.format(int(m/n), p))
+        plt.show()
+
+    @staticmethod
+    def plot_FlogsquaredF(n, m, p, N=100):
+        n_prime_range = np.linspace(1, n, N)
+        F_prime_range = [2 ** (-m / c / n_prime) for n_prime in n_prime_range]
+        FlogsquaredF_range = [F * (np.log2(F) ** 2) for F in F_prime_range]
+
+        plt.figure()
+        plt.plot(n_prime_range / n, F_prime_range, label='F_prime')
+        plt.plot(n_prime_range / n, FlogsquaredF_range, label='F * log_2^2 F')
+        plt.axhline(m * p / n, color='r', label='mp/n')
+        plt.xlabel('proportion stored (alpha)')
+        plt.ylabel('error rates')
+        plt.legend()
+        plt.title('evaluate_opt, m/n={}, p={}'.format(m / n, p))
+        plt.show()
 
 
 class RetouchedFilter(FilterInterface):
-    def __init__(self, S, m, k, beta):
+    def fit(self, S, m, k, beta):
         """
         --- Input ---
         S: array of integers.
@@ -152,16 +198,14 @@ class RetouchedFilter(FilterInterface):
         k: number of hash functions. Default is to calculate optimal k.
         beta: portion of bits to reset
         """
-        super().__init__()
         self.n = len(S)
         self.m = m
         if k is None:
             self.k = self.optimal_k()
         else:
             self.k = k
-
-        self.a = np.zeros(m)
         self.hashes = [universal_hashing() for i in range(self.k)]
+        self.a = np.zeros(m)
         for item in S:
             for hash in self.hashes:
                 self.a[hash(item) % m] += 1

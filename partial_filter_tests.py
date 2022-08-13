@@ -1,3 +1,4 @@
+import partial_filter
 from partial_filter import *
 
 def avg_errors(n_draws: int, U: int, S: np.ndarray, F: FilterInterface, zipfian=False):
@@ -17,7 +18,7 @@ def avg_errors(n_draws: int, U: int, S: np.ndarray, F: FilterInterface, zipfian=
     FP_counter = 0
     FN_counter = 0
     if zipfian:
-        # TODO: fix this
+        # TODO: implement this
         pass
     else:
         draws = np.random.randint(1, U, size=n_draws)
@@ -37,7 +38,8 @@ def test_alpha(alpha_range: np.ndarray,
                n_draws: int,
                U: int,
                S_size: int,
-               zipfian=False):
+               zipfian: bool=False,
+               method: int=0):
     """
     Testing different choices of alpha in partial filters. Other parameters are held constant.
 
@@ -57,7 +59,8 @@ def test_alpha(alpha_range: np.ndarray,
     for trial in range(n_trials):
         S = rng.choice(U, size=S_size, replace=False)
         for i, alpha in enumerate(alpha_range):
-            F = PartialFilter(S, m, k=None, alpha=alpha)
+            F = PartialFilter()
+            F.fit(S, m, k=None, alpha=alpha, method=method)
             FPR[i, trial], FNR[i, trial] = avg_errors(n_draws, U, S, F, zipfian=zipfian)
 
     FPR = np.mean(FPR, axis=1)
@@ -103,19 +106,31 @@ def test_m(multiplier_range=range(7, 22, 3), n=10000):
     fig.tight_layout()
     plt.savefig('test_m_many')
 
-# alpha_range = np.linspace(0.1, 1, 99)
-# FPR, FNR = test_alpha(alpha_range=alpha_range,
-#                               m=10000,
-#                               n_trials=50,
-#                               n_draws=1000,
-#                               U=20000,
-#                               S_size=1000)
-# plt.plot(alpha_range, FPR, label='FPR')
-# plt.plot(alpha_range, FNR, label='FNR')
-# plt.plot(alpha_range, FPR + FNR, label='total error')
-# plt.xlabel('stored portion (alpha)')
-# plt.ylabel('error rate')
-# plt.legend()
-# plt.show()
 
-PartialFilter.error_rate(10000, 100000, 0.5)
+def experiment_vs_theory():
+    """
+    Run experiment and calculations on the minimum error for different values of pm/n.
+    """
+    pass
+
+
+# PartialFilter.plot_error_rate(10000, 10000, 0.05)
+# PartialFilter.plot_FlogsquaredF(10000, 10000, 0.05)
+
+alpha_range = np.linspace(0.1, 1, 99)
+FPR, FNR = test_alpha(alpha_range=alpha_range,
+                              m=10000,
+                              n_trials=50,
+                              n_draws=1000,
+                              U=200000,
+                              S_size=1000,
+                              method=1)
+opt = PartialFilter.optimal_alpha(1000, 10000, 0.005)
+plt.plot(alpha_range, FPR, label='FPR')
+plt.plot(alpha_range, FNR, label='FNR')
+plt.plot(alpha_range, FPR + FNR, label='total error')
+plt.axvline(opt, color='r', label='theorecitcal optimal')
+plt.xlabel('stored portion (alpha)')
+plt.ylabel('error rate')
+plt.legend()
+plt.savefig('heuristic1.png')
