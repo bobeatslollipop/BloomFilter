@@ -57,6 +57,7 @@ def test_alpha(alpha_range: np.ndarray,
     rng = np.random.default_rng()
 
     for trial in range(n_trials):
+        print('starting trial {} of {}'.format(trial, n_trials))
         S = rng.choice(U, size=S_size, replace=False)
         for i, alpha in enumerate(alpha_range):
             F = PartialFilter()
