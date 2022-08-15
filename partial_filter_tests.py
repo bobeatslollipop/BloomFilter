@@ -54,11 +54,10 @@ def test_alpha(alpha_range: np.ndarray,
     N = len(alpha_range)
     FPR = np.zeros((N, n_trials))
     FNR = np.zeros((N, n_trials))
-    rng = np.random.default_rng()
 
     for trial in range(n_trials):
         print('starting trial {} of {}'.format(trial, n_trials))
-        S = rng.choice(U, size=S_size, replace=False)
+        S = np.random.choice(U, size=S_size, replace=False)
         for i, alpha in enumerate(alpha_range):
             F = PartialFilter()
             F.fit(S, m, k=None, alpha=alpha, method=method)
@@ -115,29 +114,45 @@ def experiment_vs_theory():
     pass
 
 
-# PartialFilter.plot_error_rate(10000, 10000, 0.05)
-# PartialFilter.plot_FlogsquaredF(10000, 10000, 0.05)
-
-m = 10000
-n = 1000
-U = 200000
-N = 100
-alpha_range = np.linspace(0.1, 1, N)
-FPRcomp, FNRcomp = PartialFilter.calculate_error_rate(n=n, m=m, p=n / U, N=N, plot=False)
-FPR, FNR = test_alpha(alpha_range=alpha_range,
+def test_heuristic1(n=10000, m=100000, U=2000000, N=100):
+    alpha_range = np.linspace(0.1, 1, N)
+    FPRcomp, FNRcomp = test_alpha(alpha_range=alpha_range,
                               m=m,
-                              n_trials=50,
-                              n_draws=1000,
+                              n_trials=100,
+                              n_draws=10000,
                               U=U,
                               S_size=n,
                               method=1)
-opt = PartialFilter.optimal_alpha(1000, 10000, 0.005)
-# plt.plot(alpha_range, FPR, label='FPR')
-# plt.plot(alpha_range, FNR, label='FNR')
-plt.plot(alpha_range, FPR + FNR, label='total error from heuristic1')
-plt.plot(alpha_range, FPRcomp + FNRcomp, label='total error from partial filter')
-plt.axvline(opt, color='r', label='theorecitcal optimal')
-plt.xlabel('stored portion (alpha)')
-plt.ylabel('error rate')
-plt.legend()
-plt.savefig('heuristic1.png')
+    FPR, FNR = test_alpha(alpha_range=alpha_range,
+                              m=m,
+                              n_trials=100,
+                              n_draws=10000,
+                              U=U,
+                              S_size=n,
+                              method=1)
+    opt = PartialFilter.optimal_alpha(1000, 10000, 0.005)
+    # plt.plot(alpha_range, FPR, label='FPR')
+    # plt.plot(alpha_range, FNR, label='FNR')
+    plt.plot(alpha_range, FPR + FNR, label='total error from heuristic1')
+    plt.plot(alpha_range, FPRcomp + FNRcomp, label='total error from partial filter')
+    plt.axvline(opt, color='r', label='theorecitcal optimal')
+    plt.xlabel('stored portion (alpha)')
+    plt.ylabel('error rate')
+    plt.legend()
+    plt.savefig('heuristic1.png')
+
+test_heuristic1()
+
+def test_heuristic2():
+    n, m, p = (1000, 10000, 0.1)
+    FPR, FNR = PartialFilter.error_rates_zipfian(n=n, m=m, p=p, plot=True)
+    FlogminusF = PartialFilter.FlogminusF(n=n, m=m, p=p, plot=False)
+    plt.figure()
+    plt.plot(np.linspace(0, 1, 100), FPR+FNR, label='error')
+    plt.plot(np.linspace(0, 1, 100), FlogminusF, label='F * log_2 F')
+    plt.axhline(p / np.log2(n), color='r', label='p / logn')
+    plt.xlabel('proportion stored (alpha)')
+    plt.ylabel('error rates')
+    plt.legend()
+    plt.title('FlogsquaredF, m/n={}, p={}'.format(m / n, p))
+    plt.show()

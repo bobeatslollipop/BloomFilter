@@ -135,61 +135,113 @@ class PartialFilter(FilterInterface):
         LHS = np.array([(2 ** (-m / c / n_prime)) / (n_prime ** 2) for n_prime in n_prime_choices])
         RHS = (c ** 2) * p / m / n
 
-        # plt.figure()
-        # plt.plot(n_prime_choices / n, LHS, label='LHS')
-        # plt.axhline(RHS, color='r', label='RHS')
-        # plt.legend()
-        # plt.show ()
-
         return np.argmin(np.abs(LHS - RHS)) / N
 
     # For graphing
     @staticmethod
-    def calculate_error_rate(n, m, p, N=100, plot=True):
+    def plot_errors(alpha_range, FPR, FNR, opt=None, title='error plot', filename='error'):
+        plt.figure()
+        plt.plot(alpha_range, FPR, label='FPR')
+        plt.plot(alpha_range, FNR, label='FNR')
+        plt.plot(alpha_range, FPR + FNR, label='total error')
+        if opt:
+            plt.axvline(opt, color='r', label='opt')
+        plt.xlabel('proportion stored (alpha)')
+        plt.ylabel('error rates')
+        plt.legend()
+        plt.title(title)
+        # plt.savefig(filename)
+        plt.show()
+    @staticmethod
+    def error_rates_uniform(n, m, p, N=100, plot=True):
         """
-        Evaluate the output of optimal_beta for given m,n,p. Plots graph.
+        Evaluate the output of optimal_beta for given m,n,p.
+
         --- Input ---
         n: size of S.
         m: length of array.
         p: |S| / U.
         N: number of intervals to discretize [0,1] into.
+        plot: whether to plot the graph.
+
+        --- Output ---
+        (FPR, FNR): each an np array of length N.
         """
         opt = PartialFilter.optimal_alpha(n, m, p)
         n_prime_range = np.linspace(1, n, N)
 
-        FPR = np.array([2 ** (-m / c / n_prime) for n_prime in n_prime_range])
-        FNR = np.array([p * (n - n_prime) / n for n_prime in n_prime_range])
+        F_prime = np.array([(2 ** (-m / c / n_prime)) for n_prime in n_prime_range])
+        FPR = (1 - p) * F_prime
+        FNR = np.array([p * (n - n_prime) * (1 - F_prime[i]) / n for i, n_prime in enumerate(n_prime_range)])
 
         if plot:
-            plt.figure()
-            plt.plot(n_prime_range / n, FPR, label='FPR')
-            plt.plot(n_prime_range / n, FNR, label='FNR')
-            plt.plot(n_prime_range / n, FPR + FNR, label='total error')
-            plt.axvline(opt, color='r', label='opt')
-            plt.xlabel('proportion stored (alpha)')
-            plt.ylabel('error rates')
-            plt.legend()
-            plt.title('evaluate_opt, m/n={}, p={}'.format(m/n, p))
-            # plt.savefig('m={}n, p={}.png'.format(int(m/n), p))
-            plt.show()
+            PartialFilter.plot_errors(n_prime_range/n, FPR, FNR, opt=PartialFilter.optimal_alpha(n, m, p))
 
         return FPR, FNR
 
     @staticmethod
-    def plot_FlogsquaredF(n, m, p, N=100):
+    def error_rates_zipfian(n, m, p, N=100, plot=True):
+        """
+        Evaluate the output of optimal_beta for given m,n,p.
+        --- Input ---
+        n: size of S.
+        m: length of array.
+        p: |S| / U.
+        N: number of intervals to discretize [0,1] into.
+        plot: whether to plot the graph.
+
+        --- Output ---
+        (FPR, FNR): each an np array of length N.
+        """
+        n_prime_range = np.linspace(1, n, N)
+
+        F_prime = np.array([(2 ** (-m / c / n_prime)) for n_prime in n_prime_range])
+        FPR = (1 - p) * F_prime
+        FNR = np.array([(1 - F_prime[i]) * p * (np.log(n) - np.log(n_prime)) / np.log(n)
+                        for i, n_prime in enumerate(n_prime_range)])
+
+        if plot:
+            PartialFilter.plot_errors(n_prime_range / n, FPR, FNR, opt=PartialFilter.optimal_alpha(n, m, p))
+
+        return FPR, FNR
+
+    @staticmethod
+    def FlogsquaredF(n, m, p, N=100, plot=True):
         n_prime_range = np.linspace(1, n, N)
         F_prime_range = [2 ** (-m / c / n_prime) for n_prime in n_prime_range]
         FlogsquaredF_range = [F * (np.log2(F) ** 2) for F in F_prime_range]
 
-        plt.figure()
-        plt.plot(n_prime_range / n, F_prime_range, label='F_prime')
-        plt.plot(n_prime_range / n, FlogsquaredF_range, label='F * log_2^2 F')
-        plt.axhline(m * p / n, color='r', label='mp/n')
-        plt.xlabel('proportion stored (alpha)')
-        plt.ylabel('error rates')
-        plt.legend()
-        plt.title('evaluate_opt, m/n={}, p={}'.format(m / n, p))
-        plt.show()
+        if plot:
+            plt.figure()
+            plt.plot(n_prime_range / n, F_prime_range, label='F_prime')
+            plt.plot(n_prime_range / n, FlogsquaredF_range, label='F * log_2^2 F')
+            plt.axhline(m * p / n, color='r', label='mp/n')
+            plt.xlabel('proportion stored (alpha)')
+            plt.ylabel('error rates')
+            plt.legend()
+            plt.title('FlogsquaredF, m/n={}, p={}'.format(m / n, p))
+            plt.show()
+
+        return FlogsquaredF_range
+
+    @staticmethod
+    def FlogminusF(n, m, p, N=100, plot=True):
+        n_prime_range = np.linspace(1, n, N)
+        F_prime_range = [2 ** (-m / c / n_prime) for n_prime in n_prime_range]
+        FlogminusF_range = [F * (-np.log2(F))  for F in F_prime_range]
+
+        if plot:
+            plt.figure()
+            plt.plot(n_prime_range / n, F_prime_range, label='F_prime')
+            plt.plot(n_prime_range / n, FlogminusF_range, label='F * log_2^2 F')
+            plt.axhline(m * p / n, color='r', label='mp/n')
+            plt.xlabel('proportion stored (alpha)')
+            plt.ylabel('error rates')
+            plt.legend()
+            plt.title('FlogsquaredF, m/n={}, p={}'.format(m / n, p))
+            plt.show()
+
+        return FlogminusF_range
 
 
 class RetouchedFilter(FilterInterface):
