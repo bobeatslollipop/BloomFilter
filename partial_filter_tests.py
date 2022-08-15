@@ -118,18 +118,24 @@ def experiment_vs_theory():
 # PartialFilter.plot_error_rate(10000, 10000, 0.05)
 # PartialFilter.plot_FlogsquaredF(10000, 10000, 0.05)
 
-alpha_range = np.linspace(0.1, 1, 99)
+m = 10000
+n = 1000
+U = 200000
+N = 100
+alpha_range = np.linspace(0.1, 1, N)
+FPRcomp, FNRcomp = PartialFilter.calculate_error_rate(n=n, m=m, p=n / U, N=N, plot=False)
 FPR, FNR = test_alpha(alpha_range=alpha_range,
-                              m=10000,
+                              m=m,
                               n_trials=50,
                               n_draws=1000,
-                              U=200000,
-                              S_size=1000,
+                              U=U,
+                              S_size=n,
                               method=1)
 opt = PartialFilter.optimal_alpha(1000, 10000, 0.005)
-plt.plot(alpha_range, FPR, label='FPR')
-plt.plot(alpha_range, FNR, label='FNR')
-plt.plot(alpha_range, FPR + FNR, label='total error')
+# plt.plot(alpha_range, FPR, label='FPR')
+# plt.plot(alpha_range, FNR, label='FNR')
+plt.plot(alpha_range, FPR + FNR, label='total error from heuristic1')
+plt.plot(alpha_range, FPRcomp + FNRcomp, label='total error from partial filter')
 plt.axvline(opt, color='r', label='theorecitcal optimal')
 plt.xlabel('stored portion (alpha)')
 plt.ylabel('error rate')

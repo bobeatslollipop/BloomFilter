@@ -103,8 +103,8 @@ class PartialFilter(FilterInterface):
         for i, item in enumerate(S):
             load = len([1 for hash in self.hashes if self.a[hash(item) % self.m] == 1])
             count_load_one.append((i, load))
-        count_load_one = np.array(sorted(count_load_one, key=lambda x: x[1], reverse=True))
-        S_new = S[count_load_one[self.n:, 0]]
+        count_load_one = np.array(sorted(count_load_one, key=lambda x: x[1]))
+        S_new = S[count_load_one[0:self.n]]
 
         self.a = np.zeros(self.m)
         for item in S_new:
@@ -145,7 +145,7 @@ class PartialFilter(FilterInterface):
 
     # For graphing
     @staticmethod
-    def plot_error_rate(n, m, p, N=100):
+    def calculate_error_rate(n, m, p, N=100, plot=True):
         """
         Evaluate the output of optimal_beta for given m,n,p. Plots graph.
         --- Input ---
@@ -160,17 +160,20 @@ class PartialFilter(FilterInterface):
         FPR = np.array([2 ** (-m / c / n_prime) for n_prime in n_prime_range])
         FNR = np.array([p * (n - n_prime) / n for n_prime in n_prime_range])
 
-        plt.figure()
-        plt.plot(n_prime_range / n, FPR, label='FPR')
-        plt.plot(n_prime_range / n, FNR, label='FNR')
-        plt.plot(n_prime_range / n, FPR + FNR, label='total error')
-        plt.axvline(opt, color='r', label='opt')
-        plt.xlabel('proportion stored (alpha)')
-        plt.ylabel('error rates')
-        plt.legend()
-        plt.title('evaluate_opt, m/n={}, p={}'.format(m/n, p))
-        # plt.savefig('m={}n, p={}.png'.format(int(m/n), p))
-        plt.show()
+        if plot:
+            plt.figure()
+            plt.plot(n_prime_range / n, FPR, label='FPR')
+            plt.plot(n_prime_range / n, FNR, label='FNR')
+            plt.plot(n_prime_range / n, FPR + FNR, label='total error')
+            plt.axvline(opt, color='r', label='opt')
+            plt.xlabel('proportion stored (alpha)')
+            plt.ylabel('error rates')
+            plt.legend()
+            plt.title('evaluate_opt, m/n={}, p={}'.format(m/n, p))
+            # plt.savefig('m={}n, p={}.png'.format(int(m/n), p))
+            plt.show()
+
+        return FPR, FNR
 
     @staticmethod
     def plot_FlogsquaredF(n, m, p, N=100):
