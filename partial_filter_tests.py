@@ -107,11 +107,45 @@ def test_m(multiplier_range=range(7, 22, 3), n=10000):
     plt.savefig('test_m_many')
 
 
-def experiment_vs_theory():
+def information_theoretic_D(n=1000, m=10000, p=0.2, N=500):
     """
-    Run experiment and calculations on the minimum error for different values of pm/n.
+    Lower possible distortion via information theory.
+    R(D) = max(H(p) - H(D), 0)
     """
-    pass
+
+    H_p = p * (-np.log2(p)) + (1-p) * (-np.log2(1-p))
+    H_D = max(H_p - m / (n / p), 0)
+
+    D_range = np.linspace(0, 0.5, N)
+    H_D_range = -np.array([D * np.log2(D) + (1-D) * np.log2(1-D) for D in D_range]) # entropy
+    H_D_range[0] = 0.0 # originally nan
+
+    return np.argmin(np.abs(H_D_range - H_D)) / (N * 2)
+
+
+def info_theoretic_test(multiplier_range=np.arange(0.1, 20, 0.1), n=1000, p=0.1):
+    """
+    Testing different ranges of m, and run test_alpha for each m. Other parameters held constant.
+    """
+    U = round(n / p)
+    BF_distortion = []
+    partial_distortion = []
+    minimum_distortion = []
+
+    for multiplier in multiplier_range:
+        BF_distortion.append(BloomFilter.error_rates(n=n, m=multiplier*n, optimal=True))
+        FPR, FNR = PartialFilter.error_rates_uniform(n=n, m=multiplier*n, p=p, N=500, plot=False, optimal=True)
+        partial_distortion.append(np.min(FPR + FNR))
+        minimum_distortion.append(information_theoretic_D(n=n, m=multiplier*n, p=p, N=10000))
+
+    # plt.plot(multiplier_range * n, BF_distortion, label='distortion from Bloom filter')
+    plt.plot(multiplier_range * n, partial_distortion, label='distortion from partial filter')
+    plt.plot(multiplier_range * n, minimum_distortion, label='theoretical minimum distortion')
+    plt.xlabel('array size(m)')
+    plt.ylabel('distortion')
+    plt.title('info theoretic comparison, n={}, p={}'.format(n, p))
+    plt.legend()
+    plt.show()
 
 
 def test_heuristic1(n=10000, m=100000, U=2000000, N=100):
@@ -122,7 +156,7 @@ def test_heuristic1(n=10000, m=100000, U=2000000, N=100):
                               n_draws=10000,
                               U=U,
                               S_size=n,
-                              method=1)
+                              method=0)
     FPR, FNR = test_alpha(alpha_range=alpha_range,
                               m=m,
                               n_trials=100,
@@ -131,8 +165,6 @@ def test_heuristic1(n=10000, m=100000, U=2000000, N=100):
                               S_size=n,
                               method=1)
     opt = PartialFilter.optimal_alpha(1000, 10000, 0.005)
-    # plt.plot(alpha_range, FPR, label='FPR')
-    # plt.plot(alpha_range, FNR, label='FNR')
     plt.plot(alpha_range, FPR + FNR, label='total error from heuristic1')
     plt.plot(alpha_range, FPRcomp + FNRcomp, label='total error from partial filter')
     plt.axvline(opt, color='r', label='theorecitcal optimal')
@@ -141,18 +173,20 @@ def test_heuristic1(n=10000, m=100000, U=2000000, N=100):
     plt.legend()
     plt.savefig('heuristic1.png')
 
-test_heuristic1()
 
-def test_heuristic2():
-    n, m, p = (1000, 10000, 0.1)
-    FPR, FNR = PartialFilter.error_rates_zipfian(n=n, m=m, p=p, plot=True)
-    FlogminusF = PartialFilter.FlogminusF(n=n, m=m, p=p, plot=False)
+def rounding_error_heuristic2():
+    n, m, p, N = (10000, 100000, 0.05, 500)
+    FPR, FNR = PartialFilter.error_rates_zipfian(n=n, m=m, p=p, plot=False, N=N)
+    FminuslogF = PartialFilter.FminuslogF(n=n, m=m, p=p, plot=False, N=N)
     plt.figure()
-    plt.plot(np.linspace(0, 1, 100), FPR+FNR, label='error')
-    plt.plot(np.linspace(0, 1, 100), FlogminusF, label='F * log_2 F')
+    plt.plot(np.linspace(0, 1, N), FPR+FNR, label='error')
+    plt.plot(np.linspace(0, 1, N), FminuslogF, label='F * log_2 F')
     plt.axhline(p / np.log2(n), color='r', label='p / logn')
+    plt.axvline(np.argmin(FPR+FNR) / N, color='g', label='opt')
     plt.xlabel('proportion stored (alpha)')
     plt.ylabel('error rates')
     plt.legend()
-    plt.title('FlogsquaredF, m/n={}, p={}'.format(m / n, p))
+    plt.title('FminuslogF, m/n={}, p={}'.format(m / n, p))
     plt.show()
+
+test_heuristic1()

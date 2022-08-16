@@ -60,6 +60,25 @@ class BloomFilter(FilterInterface):
             for hash in self.hashes:
                 self.a[hash(item) % m] += 1
 
+    @staticmethod
+    def error_rates(n, m, optimal=False):
+        """
+        Evaluate the output of optimal_beta for given m,n,p.
+
+        --- Input ---
+        n: size of S.
+        m: length of array.
+        p: |S| / U.
+        N: number of intervals to discretize [0,1] into.
+        plot: whether to plot the graph.
+
+        --- Output ---
+        (FPR, FNR): each an np array of length N.
+        """
+        if optimal:
+            return 2 ** (-m / n)
+        return 2 ** (-m / c / n)
+
 
 class PartialFilter(FilterInterface):
     def fit(self, S: np.ndarray, m: int, k: Optional[int], alpha: float, method: int=0):
@@ -152,8 +171,10 @@ class PartialFilter(FilterInterface):
         plt.title(title)
         # plt.savefig(filename)
         plt.show()
+
+
     @staticmethod
-    def error_rates_uniform(n, m, p, N=100, plot=True):
+    def error_rates_uniform(n, m, p, N=100, plot=True, optimal=False):
         """
         Evaluate the output of optimal_beta for given m,n,p.
 
@@ -167,10 +188,12 @@ class PartialFilter(FilterInterface):
         --- Output ---
         (FPR, FNR): each an np array of length N.
         """
-        opt = PartialFilter.optimal_alpha(n, m, p)
         n_prime_range = np.linspace(1, n, N)
 
-        F_prime = np.array([(2 ** (-m / c / n_prime)) for n_prime in n_prime_range])
+        if optimal:
+            F_prime = np.array([(2 ** (-m / n_prime)) for n_prime in n_prime_range])
+        else:
+            F_prime = np.array([(2 ** (-m / c / n_prime)) for n_prime in n_prime_range])
         FPR = (1 - p) * F_prime
         FNR = np.array([p * (n - n_prime) * (1 - F_prime[i]) / n for i, n_prime in enumerate(n_prime_range)])
 
@@ -178,6 +201,7 @@ class PartialFilter(FilterInterface):
             PartialFilter.plot_errors(n_prime_range/n, FPR, FNR, opt=PartialFilter.optimal_alpha(n, m, p))
 
         return FPR, FNR
+
 
     @staticmethod
     def error_rates_zipfian(n, m, p, N=100, plot=True):
@@ -225,10 +249,10 @@ class PartialFilter(FilterInterface):
         return FlogsquaredF_range
 
     @staticmethod
-    def FlogminusF(n, m, p, N=100, plot=True):
+    def FminuslogF(n, m, p, N=100, plot=True):
         n_prime_range = np.linspace(1, n, N)
         F_prime_range = [2 ** (-m / c / n_prime) for n_prime in n_prime_range]
-        FlogminusF_range = [F * (-np.log2(F))  for F in F_prime_range]
+        FlogminusF_range = [F * (-np.log(F))  for F in F_prime_range]
 
         if plot:
             plt.figure()
