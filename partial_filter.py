@@ -114,10 +114,28 @@ class PartialFilter(FilterInterface):
         """
         Remove elements according to heuristic 1, namely to remove those with most load 1 bits.
         """
+        def count_load_1(item):
+            ans = 0
+            for hash in self.hashes:
+                if self.a[hash(item) % self.m] == 1:
+                    ans += 1
+            return ans
+
         for item in S:
             for hash in self.hashes:
                 self.a[hash(item) % self.m] += 1
 
+        S = S.copy()
+        while len(S) > self.n:
+            count_load_1s = [count_load_1(item) for item in S]
+            maxarg = np.argmax(count_load_1s)
+            item_to_remove = S[np.argmax(count_load_1s)]
+            for hash in self.hashes:
+                self.a[hash(item_to_remove) % self.m] -= 1
+            S = np.delete(S, maxarg)
+
+
+        # old
         count_load_one = []
         for i, item in enumerate(S):
             load = len([1 for hash in self.hashes if self.a[hash(item) % self.m] == 1])
