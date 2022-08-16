@@ -136,17 +136,17 @@ class PartialFilter(FilterInterface):
 
 
         # old
-        count_load_one = []
-        for i, item in enumerate(S):
-            load = len([1 for hash in self.hashes if self.a[hash(item) % self.m] == 1])
-            count_load_one.append((i, load))
-        count_load_one = np.array(sorted(count_load_one, key=lambda x: x[1]))
-        S_new = S[count_load_one[0:self.n]]
-
-        self.a = np.zeros(self.m)
-        for item in S_new:
-            for hash in self.hashes:
-                self.a[hash(item) % self.m] += 1
+        # count_load_one = []
+        # for i, item in enumerate(S):
+        #     load = len([1 for hash in self.hashes if self.a[hash(item) % self.m] == 1])
+        #     count_load_one.append((i, load))
+        # count_load_one = np.array(sorted(count_load_one, key=lambda x: x[1]))
+        # S_new = S[count_load_one[0:self.n]]
+        #
+        # self.a = np.zeros(self.m)
+        # for item in S_new:
+        #     for hash in self.hashes:
+        #         self.a[hash(item) % self.m] += 1
 
 
     def heuristic_2(self, S):
