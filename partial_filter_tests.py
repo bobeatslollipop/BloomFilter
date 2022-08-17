@@ -149,7 +149,7 @@ def info_theoretic_test(multiplier_range=np.arange(0.1, 20, 0.1), n=1000, p=0.1)
     plt.show()
 
 
-def test_heuristic1(n=1000, m=10000, U=200000, N=50):
+def test_heuristic1(n=10000, m=100000, U=200000, N=100):
     alpha_range = np.linspace(0.1, 1, N)
     FPR, FNR = test_alpha(alpha_range=alpha_range,
                           m=m,
