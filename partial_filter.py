@@ -109,17 +109,19 @@ class PartialFilter(FilterInterface):
         elif method == 2:
             self.heuristic_2(S)
 
+    def _count_load_1(self, item):
+        ans = 0
+        for hash in self.hashes:
+            if self.a[hash(item) % self.m] == 1:
+                ans += 1
+        return ans
+
 
     def heuristic_1(self, S):
         """
         Remove elements according to heuristic 1, namely to remove those with most load 1 bits.
         """
-        def count_load_1(item):
-            ans = 0
-            for hash in self.hashes:
-                if self.a[hash(item) % self.m] == 1:
-                    ans += 1
-            return ans
+
 
         for item in S:
             for hash in self.hashes:
@@ -127,7 +129,7 @@ class PartialFilter(FilterInterface):
 
         S = S.copy()
         while len(S) > self.n:
-            count_load_1s = [count_load_1(item) for item in S]
+            count_load_1s = [self._count_load_1(item) for item in S]
             maxarg = np.argmax(count_load_1s)
             item_to_remove = S[np.argmax(count_load_1s)]
             for hash in self.hashes:
@@ -149,9 +151,17 @@ class PartialFilter(FilterInterface):
         #         self.a[hash(item) % self.m] += 1
 
 
-    def heuristic_2(self, S):
-        # TODO: implement this
-        pass
+    def remove_element(self, S):
+        """
+        Greedily remove the best element according to heuristic1.
+        returns modified S.
+        """
+        count_load_1s = [self._count_load_1(item) for item in S]
+        maxarg = np.argmax(count_load_1s)
+        item_to_remove = S[np.argmax(count_load_1s)]
+        for hash in self.hashes:
+            self.a[hash(item_to_remove) % self.m] -= 1
+        return np.delete(S, maxarg)
 
 
     @staticmethod

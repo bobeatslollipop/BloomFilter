@@ -55,3 +55,11 @@ def draw_zipfian(size, S, n, s=1):
     weight = np.array([1 / (i ** s) for i in range(1, n+1)])
     weight = weight / sum(weight)
     return np.random.choice(size=size, a=S, replace=True, p=weight)
+
+
+def Bern_entropy(p: float):
+    if p == 0 or p == 1:
+        return 0
+    if not 0 < p < 1:
+        raise('not a valid probability')
+    return -p * np.log2(p) - (1-p) * np.log2(1-p)

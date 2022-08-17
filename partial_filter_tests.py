@@ -37,7 +37,7 @@ def test_alpha(alpha_range: np.ndarray,
                n_trials: int,
                n_draws: int,
                U: int,
-               S_size: int,
+               n: int,
                zipfian: bool=False,
                method: int=0):
     """
@@ -55,12 +55,13 @@ def test_alpha(alpha_range: np.ndarray,
     FPR = np.zeros((N, n_trials))
     FNR = np.zeros((N, n_trials))
 
+
     for trial in range(n_trials):
         print('starting trial {} of {}'.format(trial, n_trials))
-        S = np.random.choice(U, size=S_size, replace=False)
+        S = np.random.choice(U, size=n, replace=False)
         for i, alpha in enumerate(alpha_range):
+            print('    alpha = {} of {}'.format(alpha, alpha_range))
             F = PartialFilter()
-            # TODO: try not creating new filter every time
             F.fit(S, m, k=None, alpha=alpha, method=method)
             FPR[i, trial], FNR[i, trial] = avg_errors(n_draws, U, S, F, zipfian=zipfian)
 
@@ -95,7 +96,7 @@ def test_m(multiplier_range=range(7, 22, 3), n=10000):
                               n_trials=50,
                               n_draws=10000,
                               U=U,
-                              S_size=10000)
+                              n=10000)
 
         ax1.plot(alpha_range, FPR, label='m={}n'.format(multiplier))
         ax2.plot(alpha_range, FNR, label='m={}n'.format(multiplier))
@@ -156,15 +157,15 @@ def test_heuristic1(n=10000, m=100000, U=200000, N=100):
                           n_trials=30,
                           n_draws=n,
                           U=U,
-                          S_size=n,
+                          n=n,
                           method=1)
     FPRcomp, FNRcomp = test_alpha(alpha_range=alpha_range,
-                              m=m,
-                              n_trials=100,
-                              n_draws=n,
-                              U=U,
-                              S_size=n,
-                              method=0)
+                                  m=m,
+                                  n_trials=100,
+                                  n_draws=n,
+                                  U=U,
+                                  n=n,
+                                  method=0)
 
     opt = PartialFilter.optimal_alpha(n, m, n / U)
     plt.plot(alpha_range, FPR + FNR, label='total error from heuristic1')
