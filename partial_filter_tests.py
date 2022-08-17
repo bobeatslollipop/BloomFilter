@@ -60,6 +60,7 @@ def test_alpha(alpha_range: np.ndarray,
         S = np.random.choice(U, size=S_size, replace=False)
         for i, alpha in enumerate(alpha_range):
             F = PartialFilter()
+            # TODO: try not creating new filter every time
             F.fit(S, m, k=None, alpha=alpha, method=method)
             FPR[i, trial], FNR[i, trial] = avg_errors(n_draws, U, S, F, zipfian=zipfian)
 
@@ -150,6 +151,13 @@ def info_theoretic_test(multiplier_range=np.arange(0.1, 20, 0.1), n=1000, p=0.1)
 
 def test_heuristic1(n=1000, m=10000, U=200000, N=50):
     alpha_range = np.linspace(0.1, 1, N)
+    FPR, FNR = test_alpha(alpha_range=alpha_range,
+                          m=m,
+                          n_trials=30,
+                          n_draws=n,
+                          U=U,
+                          S_size=n,
+                          method=1)
     FPRcomp, FNRcomp = test_alpha(alpha_range=alpha_range,
                               m=m,
                               n_trials=100,
@@ -157,13 +165,7 @@ def test_heuristic1(n=1000, m=10000, U=200000, N=50):
                               U=U,
                               S_size=n,
                               method=0)
-    FPR, FNR = test_alpha(alpha_range=alpha_range,
-                              m=m,
-                              n_trials=30,
-                              n_draws=n,
-                              U=U,
-                              S_size=n,
-                              method=1)
+
     opt = PartialFilter.optimal_alpha(n, m, n / U)
     plt.plot(alpha_range, FPR + FNR, label='total error from heuristic1')
     plt.plot(alpha_range, FPRcomp + FNRcomp, label='total error from partial filter')
