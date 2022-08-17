@@ -148,23 +148,23 @@ def info_theoretic_test(multiplier_range=np.arange(0.1, 20, 0.1), n=1000, p=0.1)
     plt.show()
 
 
-def test_heuristic1(n=10000, m=100000, U=2000000, N=100):
+def test_heuristic1(n=1000, m=10000, U=200000, N=50):
     alpha_range = np.linspace(0.1, 1, N)
     FPRcomp, FNRcomp = test_alpha(alpha_range=alpha_range,
                               m=m,
                               n_trials=100,
-                              n_draws=10000,
+                              n_draws=n,
                               U=U,
                               S_size=n,
                               method=0)
     FPR, FNR = test_alpha(alpha_range=alpha_range,
                               m=m,
-                              n_trials=100,
-                              n_draws=10000,
+                              n_trials=30,
+                              n_draws=n,
                               U=U,
                               S_size=n,
                               method=1)
-    opt = PartialFilter.optimal_alpha(1000, 10000, 0.005)
+    opt = PartialFilter.optimal_alpha(n, m, n / U)
     plt.plot(alpha_range, FPR + FNR, label='total error from heuristic1')
     plt.plot(alpha_range, FPRcomp + FNRcomp, label='total error from partial filter')
     plt.axvline(opt, color='r', label='theorecitcal optimal')
