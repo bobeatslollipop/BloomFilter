@@ -60,7 +60,7 @@ def test_alpha(alpha_range: np.ndarray,
         print('starting trial {} of {}'.format(trial, n_trials))
         S = np.random.choice(U, size=n, replace=False)
         for i, alpha in enumerate(alpha_range):
-            print('    alpha = {} of {}'.format(alpha, alpha_range))
+            print('    testing alpha number {} of {}'.format(i, N))
             F = PartialFilter()
             F.fit(S, m, k=None, alpha=alpha, method=method)
             FPR[i, trial], FNR[i, trial] = avg_errors(n_draws, U, S, F, zipfian=zipfian)
